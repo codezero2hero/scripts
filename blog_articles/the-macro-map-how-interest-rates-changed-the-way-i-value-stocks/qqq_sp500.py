@@ -58,7 +58,7 @@ def compute_returns_from_yfinance(start_year=2010, end_year=2025):
 # --------------------------------------------------------------------------- #
 # Plotting
 # --------------------------------------------------------------------------- #
-def plot(data, title="QQQ vs. S&P 500 Index"):
+def plot(data, title="QQQ vs. S&P 500 Total Return Index | Annual Returns"):
     years = sorted(data.keys())
     qqq   = [data[y]["QQQ"]   for y in years]
     sp500 = [data[y]["SP500"] for y in years]
@@ -70,7 +70,7 @@ def plot(data, title="QQQ vs. S&P 500 Index"):
     fig, ax = plt.subplots(figsize=(15, 8))
 
     bars1 = ax.bar(x - w / 2 - gap / 2, qqq, w, label="QQQ", color=NAVY)
-    bars2 = ax.bar(x + w / 2 + gap / 2, sp500, w, label="S&P 500 Index", color=SKY)
+    bars2 = ax.bar(x + w / 2 + gap / 2, sp500, w, label="S&P 500 Total Return Index", color=SKY)
 
     # Value labels above (or below, for negatives) each bar
     def label_bars(bars):
