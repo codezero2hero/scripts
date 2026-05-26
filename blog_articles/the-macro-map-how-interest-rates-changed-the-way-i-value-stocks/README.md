@@ -18,6 +18,12 @@ Downloads historical market data using `yfinance`, calculates annual total retur
 
 This chart supports the article's discussion of how growth-oriented investments can suffer during changing valuation and interest-rate environments.
 
+### `valuation_sensitivity.py`
+
+Reproduces the hypothetical company valuation used in the article: $10 of annual cash flow for 10 years plus a $150 terminal value, valued at required returns of 5% and 8%.
+
+This calculation shows that the same expected cash flows can produce a lower estimated value when the required return rises, and that the distant terminal value is the most rate-sensitive part of the valuation.
+
 ## Install dependencies
 
 ```bash
