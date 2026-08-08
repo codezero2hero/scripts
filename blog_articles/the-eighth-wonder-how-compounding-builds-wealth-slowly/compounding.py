@@ -1,18 +1,5 @@
 """
-compounding_v2.py  --  companion script for "The Eighth Wonder: How Compounding
-                       Builds Wealth Slowly" (CodeZero2Hero).
-
-WHAT CHANGED VS compounding.py (v1)
-  The maths is byte-for-byte the same engine: same simulate(), same crossover
-  logic, same market-history loader. Every number in the post still holds.
-  What changed is the LOOK: a small editorial chart system instead of default
-  matplotlib -- serif headlines, gradient fills, direct labels instead of legend
-  boxes, hairline axes, annotated turning points, and a light/dark theme.
-
-  v2 writes into ./charts_v2/ so it can never overwrite v1's output. If you
-  prefer the old charts, just run compounding.py again -- nothing is lost.
-
-WHY THIS EXISTS (unchanged)
+WHY THIS EXISTS
   Compounding is the idea everybody nods at and nobody feels. Reading "your
   money grows exponentially" does nothing. Watching a curve stay boring for
   eleven years and then bend, and watching a 1.8% difference in fees quietly
