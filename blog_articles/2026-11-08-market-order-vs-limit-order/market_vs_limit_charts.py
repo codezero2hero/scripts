@@ -288,7 +288,7 @@ def chart_decision():
         (1, 1, "Market order is fine",
          "Big stock or big ETF, regular hours,\nnothing happening. You pay roughly\nhalf the spread, usually pennies.", "#e3ecf7", BLUE),
         (0, 1, "Limit order",
-         "Small cap, thin BVB name, exotic ETF.\nCalm day, but the book is shallow.\nSet the price, accept you may wait.", "#efe6d8", "#a0742c"),
+         "Small cap, thinly traded name, exotic ETF.\nCalm day, but the book is shallow.\nSet the price, accept you may wait.", "#efe6d8", "#a0742c"),
         (1, 0, "Marketable limit",
          "Liquid name, but it's the open, earnings\nor a panic. Set a limit a bit past the ask.\nYou get speed with a ceiling.", "#f6e2d4", "#c2611f"),
         (0, 0, "Limit, or don't trade",
@@ -304,7 +304,7 @@ def chart_decision():
         ax.text(x0 + 0.06, y0 + 0.40, body, fontsize=9.6, color=INK, va="center", linespacing=1.4)
 
     # Outer matrix axis labels (Horizontal: Liquidity spectrum; Vertical: Volatility/Time of day)
-    fig.text(0.11, 0.085, "thin: small caps, most BVB stocks, niche ETFs", fontsize=8.8, color=INK2)
+    fig.text(0.11, 0.085, "thin: small caps, niche ETFs, quiet listings", fontsize=8.8, color=INK2)
     fig.text(0.96, 0.085, "deep: mega caps, VWCE / CSPX in their busy hours", fontsize=8.8, color=INK2, ha="right")
     fig.text(0.535, 0.085, "LIQUIDITY  →", fontsize=8.8, color=INK3, ha="center", weight="bold")
     fig.text(0.06, 0.62, "calm,\nregular\nhours", fontsize=8.8, color=INK2, ha="center", linespacing=1.2)
