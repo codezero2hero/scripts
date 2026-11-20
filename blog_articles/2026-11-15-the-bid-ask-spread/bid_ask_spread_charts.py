@@ -1,6 +1,4 @@
 """
-bid_ask_spread_charts.py
-========================
 Companion script for "The Bid-Ask Spread: The Hidden Cost of Every Trade"
 
 What it does
@@ -28,10 +26,11 @@ Usage
 The data
 --------
 The QUOTES table below is the only data the charts use. The quotes come from an
-Interactive Brokers snapshot pulled on Sunday 15 Nov 2026. Markets were closed, so the
-feed returned the last quotes standing at the end of the US extended session on
-Friday 13 Nov 2026 (about 20:00 New York). They are NOT regular-hours
-quotes, and the article explains why that matters.
+Interactive Brokers snapshot pulled on Sunday 15 Nov 2026. Markets were closed and the
+feed marked every quote FROZEN: the last values it recorded, not a live, executable book.
+The last-trade timestamps run from 21:04 UTC on Fri 13 Nov to 00:59 UTC on Sat 14 Nov,
+but there is no verified common timestamp for every bid and ask. Treat the snapshot as
+an illustration of the range, not as regular-hours trading costs.
 
 To redo the post with your own numbers, edit QUOTES (and QUOTE_DATE) and run the
 script again. Every chart, label and printed figure is derived from that table.
@@ -68,9 +67,9 @@ QUOTES = [
     ("IDN",  "IDN  (Intellicheck)",         1.82,   2.30,        554_939),
     ("UFPT", "UFPT (UFP Technologies)",   304.00, 386.25,     34_470_790),
 ]
-QUOTE_DATE = "Fri 13 Nov 2026"
-SOURCE = (f"Source: Interactive Brokers quote snapshot, last quotes standing at end of "
-          f"US extended session, {QUOTE_DATE}.")
+QUOTE_DATE = "Sun 15 Nov 2026"
+SOURCE = (f"Source: Interactive Brokers frozen quote snapshot, pulled {QUOTE_DATE} "
+          f"(Fri 13 Nov session). Not live, not regular hours.")
 
 # Which quotes each chart features. Change these if you swap the data.
 ANATOMY_TICKER = "ANET"      # the single quote dissected in chart 1
@@ -106,6 +105,17 @@ def round_trip(bid, ask, amount=None):
         raise ValueError(f"ask ({ask}) is below bid ({bid}): that is a crossed quote, check the numbers")
     pct = (ask - bid) / mid_price(bid, ask)
     return pct if amount is None else (pct, pct * amount)
+
+
+def cash_loss(bid, ask, cash):
+    """
+    Exact loss if you spend `cash` buying at the ask and immediately sell every share at the bid.
+
+    Slightly smaller than the midpoint figure from round_trip(), because the reference is
+    the ask you paid, not the mid. The gap between the two is tiny for liquid stocks and
+    large for very wide quotes (UFPT: $1,064.72 vs $1,191.60 on $5,000).
+    """
+    return cash * (ask - bid) / ask
 
 
 def tick_floor(price, tick=US_TICK):
@@ -230,7 +240,8 @@ def chart_anatomy():
     bench_pct, bench_cost = round_trip(sb, sa, POSITION)
 
     print(f"[anatomy] {ANATOMY_TICKER} bid {bid} ask {ask} mid {mid:.2f} spread {ask - bid:.2f} "
-          f"= {pct * 100:.3f}% -> ${cost:.2f} on ${POSITION:,}")
+          f"= {pct * 100:.3f}% -> ${cost:.2f} on ${POSITION:,} at mid "
+          f"(exact cash loss spending ${POSITION:,} at the ask: ${cash_loss(bid, ask, POSITION):.2f})")
     print(f"[anatomy] {BENCHMARK_TICKER} same position -> ${bench_cost:.2f} ({cost / bench_cost:.0f}x cheaper)")
 
     fig = canvas()
@@ -264,9 +275,9 @@ def chart_anatomy():
         ax.text(x, 0.95, lab, ha="center", fontsize=12, weight="bold", color=col)
         ax.text(x, 0.58, sub, ha="center", fontsize=8.8, color=INK2, linespacing=1.2)
 
-    # The mid: hollow marker, because nobody actually trades there.
+    # The mid: hollow marker. A reference point; trades can happen there, but a market order can't count on it.
     ax.scatter([mid], [0], s=70, color=PAPER, edgecolor=INK3, linewidth=1.8, zorder=4)
-    ax.text(mid, -0.22, f"mid {money(mid)}\n(the 'fair' price\nnobody trades at)", ha="center", va="top",
+    ax.text(mid, -0.22, f"mid {money(mid)}\n(a reference point,\nnot a promise)", ha="center", va="top",
             fontsize=8.6, color=INK3, linespacing=1.2)
 
     # Two arrows from the mid: the buy leg goes up to the ask, the sell leg down to the bid.
@@ -280,11 +291,11 @@ def chart_anatomy():
 
     # Side card: the round-trip cost, and the same position in the cheap benchmark.
     c = card(fig, [0.655, 0.17, 0.30, 0.62])
-    c.text(0.08, 0.87, f"ROUND TRIP ON {money(POSITION, 0)}", fontsize=8.5, weight="bold", color=INK3)
+    c.text(0.08, 0.87, f"QUOTED ROUND TRIP ON {money(POSITION, 0)}", fontsize=8.5, weight="bold", color=INK3)
     c.text(0.08, 0.70, f"-{money(cost)}", fontsize=27, weight="bold", color=RED)
-    c.text(0.08, 0.62, f"{pct * 100:.2f}% gone, before any commission", fontsize=8.8, color=INK2)
+    c.text(0.08, 0.62, f"{pct * 100:.2f}% of mid value, before commission", fontsize=8.8, color=INK2)
     c.plot([0.08, 0.92], [0.52, 0.52], color=EDGE, lw=1)
-    c.text(0.08, 0.42, f"SAME {money(POSITION, 0)} IN {BENCHMARK_TICKER} THAT EVENING", fontsize=8.5,
+    c.text(0.08, 0.42, f"SAME {money(POSITION, 0)} IN {BENCHMARK_TICKER}, SAME SNAPSHOT", fontsize=8.5,
            weight="bold", color=INK3)
     c.text(0.08, 0.27, f"-{money(bench_cost)}", fontsize=22, weight="bold", color=BLUE)
     c.text(0.08, 0.13, f"{fmt_pct(bench_pct)}. Same money,\n{cost / bench_cost:.0f}x cheaper to get in and out.",
@@ -303,11 +314,12 @@ def chart_league():
                   key=lambda r: r[5])
     for t, _, b, a, v, p in rows:
         print(f"[league] {t:5s} bid {b:>8.2f} ask {a:>8.2f} spread {a - b:>6.2f}  {p * 100:8.3f}%  "
-              f"{p * 1e4:8.1f} bps  ${p * POSITION:>9,.2f} on ${POSITION:,}  avg daily $vol {fmt_vol(v)}")
+              f"{p * 1e4:8.1f} bps  mid ${p * POSITION:>9,.2f} / cash ${cash_loss(b, a, POSITION):>9,.2f} "
+              f"on ${POSITION:,}  avg daily $vol {fmt_vol(v)}")
     lo_p, hi_p = rows[0][5], rows[-1][5]
 
     fig = canvas()
-    header(fig, f"Same broker, same evening: {fmt_pct(lo_p)} to cross on one, {fmt_pct(hi_p)} on another.",
+    header(fig, f"Same broker, same snapshot: {fmt_pct(lo_p)} to cross on one, {fmt_pct(hi_p)} on another.",
            "Round-trip cost of crossing the quoted spread, as % of the mid price. Log scale: each gridline is 10x.")
     ax = fig.add_axes([0.255, 0.13, 0.58, 0.68])
     clean(ax)
@@ -337,12 +349,12 @@ def chart_league():
              linespacing=1.1)
 
     # Two plain-language zones instead of a legend.
-    ax.text(1.1e-4, -0.62, "under 0.1%: you'll never notice it", fontsize=8.5, color=BLUE, weight=SEMI)
+    ax.text(1.1e-4, -0.62, "under 0.1%: generally small", fontsize=8.5, color=BLUE, weight=SEMI)
     first_red = next(i for i, r in enumerate(rows) if r[5] >= cheap_cutoff)
-    ax.text(1.1e-2, first_red - 0.4, "over 0.5%: a real cost\nevery single time", fontsize=8.5, color=RED,
+    ax.text(1.1e-2, first_red - 0.4, "over 0.5%: material,\ncheck before trading", fontsize=8.5, color=RED,
             weight=SEMI, linespacing=1.2)
 
-    footer(fig, SOURCE + " Not regular-hours quotes.")
+    footer(fig, SOURCE)
     save(fig, "spread_league.png")
 
 
@@ -481,18 +493,26 @@ def chart_turnover():
 # 8. COMMAND LINE: calculator and live quotes
 # =====================================================================================
 def print_cost(label, bid, ask, amount):
-    """One readable line for a single quote, plus a rough verdict using the post's thresholds."""
+    """
+    Print both cost measures for one quote, plus a rough verdict using the article's thresholds.
+
+    - quoted round trip: spread as % of the mid, times `amount` valued at the mid
+    - cash loss: spend `amount` at the ask, sell every share straight back at the bid
+    """
     pct, cost = round_trip(bid, ask, amount)
+    loss = cash_loss(bid, ask, amount)
     if pct < 0.001:
-        verdict = "ignore it"
+        verdict = "generally small, still check the size on offer"
     elif pct < 0.005:
-        verdict = "use a limit order"
+        verdict = "pay attention, a limit order is worth considering"
     elif pct < 0.02:
-        verdict = "real cost, check the time of day"
+        verdict = "material: check time, liquidity and order size"
     else:
-        verdict = "something is off: market closed or very thin"
-    print(f"{label:6s} bid {bid:>10.4f}  ask {ask:>10.4f}  round trip {pct * 100:7.3f}%  "
-          f"= ${cost:>9,.2f} on ${amount:,.0f}  (buy side alone ${cost / 2:,.2f})  -> {verdict}")
+        verdict = "stop and investigate: stale quote, thin venue or closed market?"
+    print(f"{label}: bid {bid:,.4f}  ask {ask:,.4f}  quoted round trip {pct * 100:.3f}%")
+    print(f"  on ${amount:,.0f} at the mid:       ${cost:,.2f}  (half-spread vs mid ${cost / 2:,.2f})")
+    print(f"  spend ${amount:,.0f} at ask, sell at bid: ${loss:,.2f} cash loss")
+    print(f"  -> {verdict}")
 
 
 def live_quotes(tickers, amount):
